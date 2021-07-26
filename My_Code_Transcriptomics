@@ -46,3 +46,35 @@ head(the_count$counts)
 head(the_count$annotation)
 
 
+
+
+
+#### Let's write counts to table 
+the_count_counts <- the_count$counts
+### checking column names
+colnames(the_count_counts)
+#### changing columns names
+colnames(the_count_counts) <- c("DG-BV", "DH-BV", "DI-BP", "DJ-BP", "DK-BL",
+                                "DL-BL", "LA-LV", "LB-LV", "LC-LP", "LD-LP",
+                                "LE-LL", "LF-LL")
+### Converting the_count_counts into a data frame
+the_count_counts <- as.data.frame(the_count_counts)
+### Let's sort the data frame 
+Sorted_counts <- the_count_counts[order(-the_count_counts$`DG-BV`),]
+### Converting my row names to a proper column and renaming it. 
+Sorted_counts <- cbind(GeneID = rownames(Sorted_counts), Sorted_counts)
+### Removing the original row names
+rownames(Sorted_counts) <- NULL
+
+### Let's convert the list of GeneID into Gene Name with the getSYMBOL function
+Gene_Name <- getSYMBOL(Sorted_counts$GeneID, data='org.Mm.eg.db')
+### Merging the obtained gene name with the data frame "Sorted_counts"
+Sorted_counts1 <- cbind(Gene_Name, Sorted_counts)
+### Removing the again the original row names
+rownames(Sorted_counts1) <- NULL
+
+### Let's output the count table in csv format
+write.csv(x=Sorted_counts1, file="COUNT_TABLE.csv",row.names=TRUE)
+#Let's load data 
+CountTable <- read.csv(file = 'COUNT_TABLE.csv', header = TRUE)
+
