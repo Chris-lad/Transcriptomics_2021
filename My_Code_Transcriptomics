@@ -1,0 +1,48 @@
+library(Rsubread)
+library(edgeR)
+library(gplots)
+library(org.Mm.eg.db)
+library(RColorBrewer)
+library(annotate)
+
+
+
+# Building the index in order to speed up the queries
+buildindex(basename="Indexed_SmallGenomeMouse",reference="SmallGenomeMouse.fa.gz")
+
+
+
+### This line of code indicates to the Rsubread aligner to only consider the fastq.gz files.  
+all_12_fastq <- list.files(path = "C:/Users/blado/Desktop/THE ANALYSIS/ReferenceGenome", 
+                          pattern = ".fastq.gz$", full.names = TRUE)
+### All the fastq.gz files containing the reads are now in this vector. 
+all_12_fastq
+#### All the  fastq.gz will be now aligned to the index that we have built
+align(index = "Indexed_SmallGenomeMouse", readfile1 = all_12_fastq)
+
+
+
+
+## This line of code will cluster all the generated Bam files and put them into this vector. 
+all_12_bam <- list.files(path = "C:/Users/blado/Desktop/THE ANALYSIS/ReferenceGenome",
+                        pattern = ".BAM$", full.names = TRUE)
+all_12_bam
+## Recapitulation of the amount of reads that mapped to SmallGenomeMouse
+Prop <- propmapped(files=all_12_bam)
+Prop
+
+
+
+## Let's use the featureCounts function to count the mapped reads 
+the_count <- featureCounts(all_12_bam, annot.inbuilt="mm10")
+# Checking the slots stored in the_count
+names(the_count)
+## Let's peek in the stats 
+the_count$stat
+## Let's peek in the dimensions to observe the number of genes
+dim(the_count$counts)
+##  These are the first 6 lines
+head(the_count$counts)
+head(the_count$annotation)
+
+
