@@ -1,8 +1,6 @@
 library(Rsubread)
 library(edgeR)
-library(gplots)
 library(org.Mm.eg.db)
-library(RColorBrewer)
 library(annotate)
 
 
@@ -77,4 +75,163 @@ rownames(Sorted_counts1) <- NULL
 write.csv(x=Sorted_counts1, file="COUNT_TABLE.csv",row.names=TRUE)
 #Let's load data 
 CountTable <- read.csv(file = 'COUNT_TABLE.csv', header = TRUE)
+
+# Let's Read the sample information
+### We first converted SampleTable.csv into SampleTable.txt
+### Then we have renamed it into SampleInfo.txt
+### And finally, we have rearranged the information inside the file 
+sampleinfo <- read.delim("SampleInfo.txt", header=TRUE, sep=",")
+View(sampleinfo)
+
+
+
+### Let's read the full-count-table in csv format into R
+fullcounttable <- read.csv("full-count-table.csv", sep = ",", header = TRUE)
+#### changing columns names
+colnames(fullcounttable ) <- c("EntrezGeneID","Length","DG-BV", "DH-BV", "DI-BP", "DJ-BP", "DK-BL",
+                                "DL-BL", "LA-LV", "LB-LV", "LC-LP", "LD-LP",
+                                "LE-LL", "LF-LL")
+### convert the factors to strings/characters 
+fullcounttable$EntrezGeneID <- as.character(fullcounttable$EntrezGeneID)
+### Let's convert the EntrezGeneID into Gene Symbol with the getSYMBOL function
+GeneSymbol <- getSYMBOL(fullcounttable$EntrezGeneID, data='org.Mm.eg.db')
+### Merging Gene_Symbol with fullcounttable
+fullcounttable <- cbind(GeneSymbol, fullcounttable)
+head(fullcounttable)
+###  Let's remove first three columns
+Count_Data <- fullcounttable[,-(1:3)]
+# Let's store EntrezGeneID as rownames
+rownames(Count_Data) <- fullcounttable[,2]
+## Viewing the rownames
+rownames(Count_Data)
+
+
+
+
+
+
+
+
+
+
+#### FILTERING LOWLY EXPRESSED GENES
+
+# Getting the CPMs
+My_CPM <- cpm(Count_Data)
+# Let's peek in the output
+head(My_CPM)
+# Selecting the values in My_CPM that are greater than 0.5
+Thresh_val <- My_CPM > 0.5
+# Yielding the logical matrix with TRUEs and FALSEs
+head(Thresh_val)
+
+
+# Recapitulation of the number of TRUEs in each row
+# 11433 genes having TRUEs in all 12 samples.
+table(rowSums(Thresh_val))
+# Let's keep genes that have at least 2 TRUES in each row 
+keeping <- rowSums(Thresh_val) >= 2
+
+# A way of retaining the more highly expressed genes in the rows of Count_Data
+Counts_keep <- Count_Data[keeping,]
+summary(keeping)
+## Mode   FALSE    TRUE
+## logical   11375   15804 
+dim(Counts_keep)
+# [1] 15804    12
+
+
+
+
+
+# Looking at the first sample
+plot(My_CPM[,1],Count_Data[,1], main=colnames(My_CPM)[1])
+
+
+# Limiting the x and y-axis to see what is happening at the smaller counts
+plot(My_CPM[,1],Count_Data[,1],ylim=c(0,50),xlim=c(0,3), main=colnames(My_CPM)[1])
+#Placing Vertical line at 0.5 CPM
+abline(v=0.5)
+
+
+
+### from counts to DGEList object
+Dge_Obj <- DGEList(Counts_keep)
+### Let's view the created Dge_Obj
+Dge_Obj
+# Slots stored in Dge_Obj
+names(Dge_Obj)
+# In the samples slot we find library size information
+Dge_Obj$samples
+## Getting the number of reads for each sample
+Dge_Obj$samples$lib.size
+
+
+
+## Barplot Generation of the library sizes
+barplot(Dge_Obj$samples$lib.size, names=colnames(Dge_Obj), las=2)
+# Let's entitle the plot
+title("Barplot of library sizes")
+
+
+### Let's normalise the DGEList object
+Dge_Obj_Nor <- calcNormFactors(Dge_Obj)
+### Let's peek in the new normalisation factors
+Dge_Obj_Nor$samples
+
+
+
+### Treatment factors are combined into a unique grouping factor
+Group <- paste(sampleinfo$CellType, sampleinfo$Status, sep=".")
+Group <- factor(Group)
+
+### Categorical tabulation of the factors 
+table(Group)
+
+
+### MDS plot decoration step
+pch <- c(0,1,2,15,16,17)
+colors <- rep(c("darkgreen", "red", "blue"), 2)
+## Creating another plotting window
+dev.new(width=5, height=4)
+## Clustering in two dimensions the samples with MDS plot
+plotMDS(Dge_Obj, col=colors[Group], pch=pch[Group])
+## Adding a legend to the MDS plot
+legend("topleft", legend=levels(Group), pch=pch, col=colors, ncol=2)
+
+
+
+### Step1: Pre-Normalization
+# log2 counts per million before normalization
+logcount_UN <- cpm(Dge_Obj,log=TRUE)
+# Verifying the distributions of samples with boxplots
+boxplot(logcount_UN, xlab="", ylab="Log2 counts per million",las=2)
+# Adding a red horizontal line which is the median logCPM
+abline(h=median(logcount_UN),col="red")
+## Let's title the plot
+title("Boxplots of logCPMs (unnormalised)")
+
+
+### Step2:  Post-Normalization
+# log2 counts per million
+logcount_Nor <- cpm(Dge_Obj_Nor,log=TRUE)
+# Verifying the distributions of samples with boxplots
+boxplot(logcount_Nor, xlab="", ylab="Log2 counts per million",las=2)
+#  Adding a red horizontal line which is the median logCPM
+abline(h=median(logcount_Nor),col="red")
+### Let's title the plot
+title("Boxplots of logCPMs (Normalised)")
+
+
+
+### The mean-difference plots showing the composition bias problem
+### MD plot Pre-TMM normalization
+plotMD(Dge_Obj,column = 7)
+abline(h=0,col="green", lwd = 2, lty = 2)
+
+### MD plot Post-TMM normalization
+plotMD(Dge_Obj_Nor,column = 7)
+abline(h=0,col="green", lwd = 2, lty = 2)
+
+
 
