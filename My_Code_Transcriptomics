@@ -3,12 +3,8 @@ library(edgeR)
 library(org.Mm.eg.db)
 library(annotate)
 
-
-
 # Building the index in order to speed up the queries
 buildindex(basename="Indexed_SmallGenomeMouse",reference="SmallGenomeMouse.fa.gz")
-
-
 
 ### This line of code indicates to the Rsubread aligner to only consider the fastq.gz files.  
 all_12_fastq <- list.files(path = "C:/Users/blado/Desktop/THE ANALYSIS/ReferenceGenome", 
@@ -19,8 +15,6 @@ all_12_fastq
 align(index = "Indexed_SmallGenomeMouse", readfile1 = all_12_fastq)
 
 
-
-
 ## This line of code will cluster all the generated Bam files and put them into this vector. 
 all_12_bam <- list.files(path = "C:/Users/blado/Desktop/THE ANALYSIS/ReferenceGenome",
                         pattern = ".BAM$", full.names = TRUE)
@@ -28,7 +22,6 @@ all_12_bam
 ## Recapitulation of the amount of reads that mapped to SmallGenomeMouse
 Prop <- propmapped(files=all_12_bam)
 Prop
-
 
 
 ## Let's use the featureCounts function to count the mapped reads 
@@ -42,9 +35,6 @@ dim(the_count$counts)
 ##  These are the first 6 lines
 head(the_count$counts)
 head(the_count$annotation)
-
-
-
 
 
 #### Let's write counts to table 
@@ -84,7 +74,6 @@ sampleinfo <- read.delim("SampleInfo.txt", header=TRUE, sep=",")
 View(sampleinfo)
 
 
-
 ### Let's read the full-count-table in csv format into R
 fullcounttable <- read.csv("full-count-table.csv", sep = ",", header = TRUE)
 #### changing columns names
@@ -104,14 +93,6 @@ Count_Data <- fullcounttable[,-(1:3)]
 rownames(Count_Data) <- fullcounttable[,2]
 ## Viewing the rownames
 rownames(Count_Data)
-
-
-
-
-
-
-
-
 
 
 #### FILTERING LOWLY EXPRESSED GENES
@@ -141,9 +122,6 @@ dim(Counts_keep)
 # [1] 15804    12
 
 
-
-
-
 # Looking at the first sample
 plot(My_CPM[,1],Count_Data[,1], main=colnames(My_CPM)[1])
 
@@ -152,7 +130,6 @@ plot(My_CPM[,1],Count_Data[,1], main=colnames(My_CPM)[1])
 plot(My_CPM[,1],Count_Data[,1],ylim=c(0,50),xlim=c(0,3), main=colnames(My_CPM)[1])
 #Placing Vertical line at 0.5 CPM
 abline(v=0.5)
-
 
 
 ### from counts to DGEList object
@@ -167,18 +144,15 @@ Dge_Obj$samples
 Dge_Obj$samples$lib.size
 
 
-
 ## Barplot Generation of the library sizes
 barplot(Dge_Obj$samples$lib.size, names=colnames(Dge_Obj), las=2)
 # Let's entitle the plot
 title("Barplot of library sizes")
 
-
 ### Let's normalise the DGEList object
 Dge_Obj_Nor <- calcNormFactors(Dge_Obj)
 ### Let's peek in the new normalisation factors
 Dge_Obj_Nor$samples
-
 
 
 ### Treatment factors are combined into a unique grouping factor
@@ -187,7 +161,6 @@ Group <- factor(Group)
 
 ### Categorical tabulation of the factors 
 table(Group)
-
 
 ### MDS plot decoration step
 pch <- c(0,1,2,15,16,17)
@@ -200,7 +173,6 @@ plotMDS(Dge_Obj, col=colors[Group], pch=pch[Group])
 legend("topleft", legend=levels(Group), pch=pch, col=colors, ncol=2)
 
 
-
 ### Step1: Pre-Normalization
 # log2 counts per million before normalization
 logcount_UN <- cpm(Dge_Obj,log=TRUE)
@@ -211,7 +183,6 @@ abline(h=median(logcount_UN),col="red")
 ## Let's title the plot
 title("Boxplots of logCPMs (unnormalised)")
 
-
 ### Step2:  Post-Normalization
 # log2 counts per million
 logcount_Nor <- cpm(Dge_Obj_Nor,log=TRUE)
@@ -221,7 +192,6 @@ boxplot(logcount_Nor, xlab="", ylab="Log2 counts per million",las=2)
 abline(h=median(logcount_Nor),col="red")
 ### Let's title the plot
 title("Boxplots of logCPMs (Normalised)")
-
 
 
 ### The mean-difference plots showing the composition bias problem
