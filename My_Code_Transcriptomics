@@ -1,5 +1,6 @@
 library(Rsubread)
 library(edgeR)
+library(limma)
 library(org.Mm.eg.db)
 library(annotate)
 
