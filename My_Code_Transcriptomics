@@ -206,3 +206,111 @@ abline(h=0,col="green", lwd = 2, lty = 2)
 
 
 
+
+
+
+############ Differential expression analysis of "basal pregnant"
+############  vs "basallactate"
+
+### design matrix construction
+Design <- model.matrix(~0+Group)
+### Naming the Design columns with the levels names
+colnames(Design) <- levels(Group)
+### Printing the design matrix
+Design
+
+
+
+### Dispersion estimation 
+Dge_Obj_Dis <- estimateDisp(Dge_Obj_Nor, Design, robust=TRUE)
+### Viewing the slots stored in Dge_Obj_Dis
+names(Dge_Obj_Dis)
+### Dispersion estimation vizualization with plotBCV
+plotBCV(Dge_Obj_Dis)
+
+### Let's use the glmQLFit function to estimate the QL dispersions
+Fit <- glmQLFit(Dge_Obj_Dis, Design, robust=TRUE)
+### Let us Plot the QL Dispersions
+plotQLDisp(Fit)
+
+
+
+
+
+### Construction of contrast
+BP_BL <- makeContrasts(basal.pregnant-basal.lactate, levels = Design) 
+### Performing a QL F-test
+Res <- glmQLFTest(Fit, contrast = BP_BL)
+### Printing the dimension of "Res"
+dim(Res) ### [1] 15804     4
+### Using the topTags function to extract the top differentially expressed genes
+Top_Tags <- topTags(Res,n=15804)
+### Printing the five first rows of the object of class "TopTags"  
+head(Top_Tags)
+# Let's take out the data.frame incorporating DE results for the top genes
+Top_Tags_Table <- Top_Tags$table
+### row names represents Gene ID
+Gene_ID = rownames(Top_Tags_Table)
+### Creating a new Gene_ID column
+Top_Tags_Table <- cbind(Gene_ID, Top_Tags_Table)
+### Converting the list of Gene ID into Gene Symbol with the getSYMBOL function
+Gene_Symbol <- getSYMBOL(Top_Tags_Table$Gene_ID, data='org.Mm.eg.db')
+### Merging Gene_Symbol with Top_Tags_Table
+Top_Tags_Table <- cbind(Gene_Symbol, Top_Tags_Table)
+
+
+
+
+### Determination of the total amount of DE genes 
+is.de <- decideTestsDGE(Res)
+### Recapitulation
+summary(is.de)
+##       -1*basal.lactate 1*basal.pregnant
+## Down                                2505
+## NotSig                             10529
+## Up                                  2770
+### Picturing the extent of the DE changes
+plotMD(Res, status=is.de, values=c(1,-1), col=c("red","blue"),
+       legend="topright")
+
+
+
+
+
+#### DE above a fold-change threshold
+### Investigation of DE fold changes higher than 1.5
+TR <- glmTreat(Fit, contrast=BP_BL, lfc=log2(1.5))
+### Printing the dimension of "TR"
+dim(TR) ### [1] 15804     4
+### topTags function for extraction of DE genes
+Top_Tags1 <- topTags(TR,n=15804)
+### Printing the five first rows of the object of class "TopTags"
+head(Top_Tags1)
+### Let's bring out the data.frame incorporating DE results for the top genes
+Top_Tags_Table1 <- Top_Tags1$table
+### row names represents Gene ID
+Gene_ID = rownames(Top_Tags_Table1)
+### Creating a new Gene_ID column
+Top_Tags_Table1 <- cbind(Gene_ID, Top_Tags_Table1)
+### Converting the list of Gene ID into Gene Symbol with the getSYMBOL function
+Gene_Symbol <- getSYMBOL(Top_Tags_Table1$Gene_ID, data='org.Mm.eg.db')
+### Merging Gene_Symbol with Top_Tags_Table1
+Top_Tags_Table1 <- cbind(Gene_Symbol, Top_Tags_Table1)
+
+
+
+
+### Finding the total amount of DE genes
+is.de1 <- decideTestsDGE(TR)
+### Recapitulation 
+summary(is.de1)
+##       -1*basal.lactate 1*basal.pregnant
+## Down                                 366
+## NotSig                             14761
+## Up                                   677
+### Results visualization 
+plotMD(TR, status=is.de1, values=c(1,-1), col=c("red","blue"),
+       legend="topright")
+
+
+
