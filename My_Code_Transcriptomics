@@ -262,7 +262,7 @@ Top_Tags_Table <- cbind(Gene_Symbol, Top_Tags_Table)
 
 
 ### Determination of the total amount of DE genes 
-is.de <- decideTestsDGE(Res)
+is.de <- decideTestsDGE(Res, p.value=0.05)
 ### Recapitulation
 summary(is.de)
 ##       -1*basal.lactate 1*basal.pregnant
@@ -301,7 +301,7 @@ Top_Tags_Table1 <- cbind(Gene_Symbol, Top_Tags_Table1)
 
 
 ### Finding the total amount of DE genes
-is.de1 <- decideTestsDGE(TR)
+is.de1 <- decideTestsDGE(TR, p.value=0.05)
 ### Recapitulation 
 summary(is.de1)
 ##       -1*basal.lactate 1*basal.pregnant
