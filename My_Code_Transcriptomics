@@ -313,4 +313,124 @@ plotMD(TR, status=is.de1, values=c(1,-1), col=c("red","blue"),
        legend="topright")
 
 
+############ Differential expression analysis of Basal vs Luminal
+
+
+
+### Creating a design matrix
+
+## Extracting the treatment factor CellType
+Group1 <- paste(sampleinfo$CellType)
+## Creating the factor
+Group1 <- factor(Group1)
+## Performing a categorical tabulation of the factors
+table(Group1) ## basal luminal
+              ##     6       6
+
+## Let us construct the design matrix
+Design1 <- model.matrix(~0+Group1)
+## Defining new col names
+colnames(Design1) <- levels(Group1)
+### Printing "Design1"
+Design1
+
+
+
+### Dispersion estimation
+Dge_Obj_Dis1 <- estimateDisp(Dge_Obj_Nor, Design1, robust=FALSE)
+### slots stored in Dge_Obj_Dis1 
+names(Dge_Obj_Dis1)
+### Viewing the dispersion with the plotBCV
+plotBCV(Dge_Obj_Dis1)
+
+
+
+### QL dispersion estimation
+Fit1 <- glmQLFit(Dge_Obj_Dis1, Design1, robust=TRUE)
+### Plotting the QL Dispersion
+plotQLDisp(Fit1)
+
+
+
+### Building the contrast
+B_L <- makeContrasts(basal-luminal, levels = Design1) 
+### QL F-test
+Res1 <- glmQLFTest(Fit1, contrast = B_L)
+### Dimension of "Res1"
+dim(Res1) ### [1] 15804     4
+### Extraction of DE genes
+Top_Tags2 <- topTags(Res1,n=15804)
+### Let's peek in "Top_Tags2"  
+head(Top_Tags2)
+# Data frame with DE genes
+Top_Tags_Table2 <- Top_Tags2$table
+
+#### Adding annotation
+### row names = Gene ID
+Gene_ID = rownames(Top_Tags_Table2)
+### New Gene_ID column
+Top_Tags_Table2 <- cbind(Gene_ID, Top_Tags_Table2)
+### From Gene ID to Gene Symbol
+Gene_Symbol <- getSYMBOL(Top_Tags_Table2$Gene_ID, data='org.Mm.eg.db')
+### Merging Gene_Symbol with Top_Tags_Table
+Top_Tags_Table2 <- cbind(Gene_Symbol, Top_Tags_Table2)
+
+
+
+
+### The total amount of DE genes 
+is.de2 <- decideTestsDGE(Res1, p.value=0.05)
+### Summarization
+summary(is.de2)
+##       1*basal -1*luminal
+##Down                 4783
+##NotSig               6233
+##Up                   4788 
+### Magnitude of the DE changes
+plotMD(Res1, status=is.de2, values=c(1,-1), col=c("red","blue"),
+       legend="topright")
+
+
+
+
+### DE above a fold change threshold (Basal vs Luminal)
+
+### DE fold changes higher than 3
+TR1 <- glmTreat(Fit1, contrast=B_L, lfc=log2(3))
+### dim of "TR1"
+dim(TR1) ### [1] 15804     4
+### extraction of DE genes
+Top_Tags3 <- topTags(TR1,n=15804)
+### Displaying first rows
+head(Top_Tags3)
+### Table with DE genes
+Top_Tags_Table3 <- Top_Tags3$table
+### Let us add Gene Symbol
+## Row names are Gene ID
+Gene_ID = rownames(Top_Tags_Table3)
+###  New Gene_ID column
+Top_Tags_Table3 <- cbind(Gene_ID, Top_Tags_Table3)
+### Converting 
+Gene_Symbol <- getSYMBOL(Top_Tags_Table3$Gene_ID, data='org.Mm.eg.db')
+### Merging 
+Top_Tags_Table3 <- cbind(Gene_Symbol, Top_Tags_Table3)
+
+
+
+
+### Global amount of DE genes
+is.de3 <- decideTestsDGE(TR1, p.value=0.05)
+### Recap
+summary(is.de3)
+##       1*basal -1*luminal
+## Down                 972
+## NotSig             13104
+## Up                  1728
+### visualization 
+plotMD(TR1, status=is.de3, values=c(1,-1), col=c("red","blue"),
+       legend="topright")
+
+
+
+
 
