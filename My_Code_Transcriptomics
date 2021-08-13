@@ -327,7 +327,7 @@ Group1 <- factor(Group1)
 table(Group1) ## basal luminal
               ##     6       6
 
-## Let us construct the design matrix
+## Let us construct the design matrix without intercept
 Design1 <- model.matrix(~0+Group1)
 ## Defining new col names
 colnames(Design1) <- levels(Group1)
